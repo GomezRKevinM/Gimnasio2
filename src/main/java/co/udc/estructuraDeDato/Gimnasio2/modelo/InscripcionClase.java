@@ -49,12 +49,15 @@ public class InscripcionClase {
 
     @Override
     public String toString() {
-        return "InscripcionClase{" +
-                "codigo='" + codigo + '\'' +
-                ", cliente='" + nombreCliente + '\'' +
-                ", clase='" + tipoClase + '\'' +
-                ", prioridad='" + prioridad + '\'' +
-                ", estado='" + estado + '\'' +
-                '}';
+        String plantilla = "| %s | %s | %s | %s | %s |";
+
+
+        return String.format(plantilla,
+                this.codigo,
+                this.nombreCliente,
+                this.tipoClase,
+                this.prioridad,
+                this.estado
+                );
     }
 }
