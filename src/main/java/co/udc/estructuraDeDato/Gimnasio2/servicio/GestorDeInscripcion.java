@@ -12,7 +12,7 @@ public class GestorDeInscripcion {
     private Deque<InscripcionClase> pilaHistorial = new ArrayDeque<>();
     private Map<String, InscripcionClase> mapaBusqueda = new HashMap<>();
 
-    public void registrarInscripción(InscripcionClase inscripcion){
+    public void registrarInscripcion(InscripcionClase inscripcion){
         if(mapaBusqueda.containsKey(inscripcion.getCodigo())){
             throw new IllegalArgumentException("Error: Ya existe una inscripción con el código: " + inscripcion.getCodigo());
         }
@@ -27,7 +27,10 @@ public class GestorDeInscripcion {
             System.out.println("No hay inscripciones registradas");
             return;
         }
-
+        String head = "| CODIGO | CLIENTE | CLASE | PRIORIDAD | ESTADO |";
+        System.out.println("-".repeat(head.length()));
+        System.out.println(head);
+        System.out.println("-".repeat(head.length()));
         listaGeneral.forEach(System.out::println);
     }
 
