@@ -9,8 +9,7 @@ public class InscripcionClase {
     private String prioridad;
     private String estado;
 
-    public InscripcionClase(String codigo, String nombreCliente, String tipoClase, String prioridad, String estado) {
-        this.codigo = codigo;
+    public InscripcionClase( String nombreCliente, String tipoClase, String prioridad, String estado) {
         this.nombreCliente = nombreCliente;
         this.tipoClase = tipoClase;
         this.prioridad = prioridad;
@@ -49,7 +48,7 @@ public class InscripcionClase {
 
     @Override
     public String toString() {
-        String plantilla = "| %s | %s | %s | %s | %s |";
+        String plantilla = "{ codigo: %s , cliente: %s  , clase: %s , prioridad: %s , estado: %s }";
 
 
         return String.format(plantilla,

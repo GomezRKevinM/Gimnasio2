@@ -2,31 +2,52 @@ package co.udc.estructuraDeDato.Gimnasio2.servicio;
 
 import co.udc.estructuraDeDato.Gimnasio2.modelo.InscripcionClase;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class GestorDeInscripcion {
 
-    private List<InscripcionClase> listaGeneral = new ArrayList<>();
-    private Queue<InscripcionClase> colaPendientes = new LinkedList<>();
-    private Deque<InscripcionClase> pilaHistorial = new ArrayDeque<>();
-    private Map<String, InscripcionClase> mapaBusqueda = new HashMap<>();
+    private final List<InscripcionClase> listaGeneral = new ArrayList<>();
+    private final Queue<InscripcionClase> colaPendientes = new LinkedList<>();
+    private final Deque<InscripcionClase> pilaHistorial = new ArrayDeque<>();
+    private final Map<String, InscripcionClase> mapaBusqueda = new HashMap<>();
 
-    public void registrarInscripcion(InscripcionClase inscripcion){
-        if(mapaBusqueda.containsKey(inscripcion.getCodigo())){
-            throw new IllegalArgumentException("Error: Ya existe una inscripción con el código: " + inscripcion.getCodigo());
+    public void registrarInscripcion(InscripcionClase inscripcion) {
+        inscripcion.setCodigo(generarCodigoUnico());
+
+        if (mapaBusqueda.containsKey(inscripcion.getCodigo())) {
+            throw new IllegalArgumentException("Error: Ya existe una inscripcion con el codigo: " + inscripcion.getCodigo());
         }
 
         listaGeneral.add(inscripcion);
         colaPendientes.offer(inscripcion);
-        mapaBusqueda.put(inscripcion.getCodigo(),inscripcion);
+        mapaBusqueda.put(inscripcion.getCodigo(), inscripcion);
     }
 
-    public void listarTodos(){
+    private String generarCodigoUnico() {
+        String codigo;
+        do {
+            codigo = UUID.randomUUID().toString();
+        } while (mapaBusqueda.containsKey(codigo));
+        return codigo;
+    }
+
+    public void listarTodos() {
         if (listaGeneral.isEmpty()) {
             System.out.println("No hay inscripciones registradas");
             return;
         }
+
         String head = "| CODIGO | CLIENTE | CLASE | PRIORIDAD | ESTADO |";
         System.out.println("-".repeat(head.length()));
         System.out.println(head);
@@ -34,8 +55,8 @@ public class GestorDeInscripcion {
         listaGeneral.forEach(System.out::println);
     }
 
-    public void mostrarPendientes(){
-        if(colaPendientes.isEmpty()){
+    public void mostrarPendientes() {
+        if (colaPendientes.isEmpty()) {
             System.out.println("No hay inscripciones pendientes");
             return;
         }
@@ -46,30 +67,38 @@ public class GestorDeInscripcion {
         colaPendientes.forEach(System.out::println);
     }
 
-    public void procesarSiguiente(){
+    public InscripcionClase obtenerUltimoRegistro() {
+        if (listaGeneral.isEmpty()) {
+            System.out.println("No hay inscripciones registradas");
+            return null;
+        }
+        return listaGeneral.get(listaGeneral.size() - 1);
+    }
+
+    public void procesarSiguiente() {
         InscripcionClase siguiente = colaPendientes.poll();
-        if(siguiente == null){
+        if (siguiente == null) {
             throw new IllegalArgumentException("Error: No hay inscripciones pendientes");
         }
         siguiente.setEstado("PROCESADO");
         pilaHistorial.push(siguiente);
-        System.out.printf("Se ha procesado con exito a: %s \n", siguiente.getNombreCliente());
+        System.out.printf("Se ha procesado con exito a: %s%n", siguiente.getNombreCliente());
     }
 
-    public void mostrarHistorial(){
-        if (pilaHistorial.isEmpty()){
-            System.out.println("El historial esta vacío");
+    public void mostrarHistorial() {
+        if (pilaHistorial.isEmpty()) {
+            System.out.println("El historial esta vacio");
             return;
         }
 
         System.out.println("Total procesados: " + pilaHistorial.size());
-        System.out.println("Último procesado: " + pilaHistorial.peek());
+        System.out.println("Ultimo procesado: " + pilaHistorial.peek());
         System.out.println("--- Historial (LIFO) ---");
         pilaHistorial.forEach(System.out::println);
     }
 
-    public InscripcionClase buscarPorCodigo(String codigo){
-        if (codigo.trim().isEmpty()){
+    public InscripcionClase buscarPorCodigo(String codigo) {
+        if (codigo.trim().isEmpty()) {
             throw new IllegalArgumentException("No se puede buscar con un codigo vacio");
         }
 
@@ -100,6 +129,12 @@ public class GestorDeInscripcion {
                 .toList();
     }
 
+    public List<String> obtenerNombresClientes() {
+        return listaGeneral.stream()
+                .map(InscripcionClase::getNombreCliente)
+                .toList();
+    }
+
     public Map<String, Long> generarEstadisticasPorEstado() {
         return listaGeneral.stream()
                 .collect(Collectors.groupingBy(InscripcionClase::getEstado, Collectors.counting()));
@@ -110,10 +145,52 @@ public class GestorDeInscripcion {
                 .collect(Collectors.groupingBy(InscripcionClase::getTipoClase));
     }
 
+    public Map<String, InscripcionClase> reconstruirIndiceConStream() {
+        return listaGeneral.stream()
+                .collect(Collectors.toMap(
+                        InscripcionClase::getCodigo,
+                        inscripcion -> inscripcion,
+                        (existente, repetida) -> existente
+                ));
+    }
+
+    public boolean existePendiente() {
+        return listaGeneral.stream()
+                .anyMatch(i -> i.getEstado().equalsIgnoreCase("PENDIENTE"));
+    }
+
+    public boolean todosTienenCodigo() {
+        return listaGeneral.stream()
+                .allMatch(i -> i.getCodigo() != null && !i.getCodigo().isBlank());
+    }
+
+    public boolean noHayCancelados() {
+        return listaGeneral.stream()
+                .noneMatch(i -> i.getEstado().equalsIgnoreCase("CANCELADO"));
+    }
+
+    public void mostrarIndiceBusqueda() {
+        if (mapaBusqueda.isEmpty()) {
+            System.out.println("El mapa de busqueda esta vacio");
+            return;
+        }
+
+        System.out.println("--- Claves del Map (keySet) ---");
+        mapaBusqueda.keySet().forEach(System.out::println);
+
+        System.out.println("--- Valores del Map (values) ---");
+        mapaBusqueda.values().forEach(System.out::println);
+
+        System.out.println("--- Entradas del Map (entrySet) ---");
+        mapaBusqueda.entrySet().forEach(entry ->
+                System.out.println(entry.getKey() + " => " + entry.getValue())
+        );
+    }
+
     public void cancelarInscripcionPendiente(String codigo) {
         InscripcionClase inscripcion = mapaBusqueda.get(codigo);
         if (inscripcion == null) {
-            throw new IllegalArgumentException("Error: No existe una inscripción con ese código.");
+            throw new IllegalArgumentException("Error: No existe una inscripcion con ese codigo.");
         }
         if (!inscripcion.getEstado().equalsIgnoreCase("PENDIENTE")) {
             throw new IllegalStateException("Error: Solo se pueden cancelar inscripciones en estado PENDIENTE.");
@@ -128,18 +205,19 @@ public class GestorDeInscripcion {
         }
         InscripcionClase ultimo = pilaHistorial.pop();
         ultimo.setEstado("PENDIENTE");
-        colaPendientes.offer(ultimo); // Regresa a la cola
-        System.out.println("Se deshizo el procesamiento de: " + ultimo.getNombreCliente() + ". Volvió a pendientes.");
+        colaPendientes.offer(ultimo);
+        System.out.println("Se deshizo el procesamiento de: " + ultimo.getNombreCliente() + ". Volvio a pendientes.");
     }
 
     public void mostrarCantidades() {
-        System.out.println("=== Tamaños de las Estructuras ===");
+        System.out.println("=== Tamanos de las Estructuras ===");
         System.out.println("Lista General: " + listaGeneral.size());
         System.out.println("Cola Pendientes: " + colaPendientes.size());
         System.out.println("Pila Historial: " + pilaHistorial.size());
-        System.out.println("Mapa de Búsqueda: " + mapaBusqueda.size());
+        System.out.println("Mapa de Busqueda: " + mapaBusqueda.size());
+        System.out.println("Mapa vacio: " + mapaBusqueda.isEmpty());
 
-        System.out.println("\n=== Conteos Específicos con Stream ===");
+        System.out.println("\n=== Conteos Especificos con Stream ===");
         long pendientes = listaGeneral.stream().filter(i -> i.getEstado().equals("PENDIENTE")).count();
         long procesados = listaGeneral.stream().filter(i -> i.getEstado().equals("PROCESADO")).count();
         long cancelados = listaGeneral.stream().filter(i -> i.getEstado().equals("CANCELADO")).count();
