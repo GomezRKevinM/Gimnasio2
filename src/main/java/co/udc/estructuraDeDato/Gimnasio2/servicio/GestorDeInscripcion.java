@@ -72,7 +72,7 @@ public class GestorDeInscripcion {
             System.out.println("No hay inscripciones registradas");
             return null;
         }
-        return listaGeneral.get(listaGeneral.size() - 1);
+        return listaGeneral.getLast();
     }
 
     public void procesarSiguiente() {
